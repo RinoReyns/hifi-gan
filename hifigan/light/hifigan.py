@@ -189,6 +189,9 @@ class HifiGAN(pl.LightningModule):
         # return loss_disc_all, loss_gen_all
 
     def validation_step(self, batch, batch_idx):
+        print("validation is skipped")
+        return
+
         self.net_g.eval()
         
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
@@ -255,10 +258,11 @@ class HifiGAN(pl.LightningModule):
         )
     
     def on_validation_epoch_end(self) -> None:
-        self.net_g.eval()
-        valid_mel_loss_epoch = self.valid_mel_loss.compute()
-        self.log("valid/loss_mel_epoch", valid_mel_loss_epoch.item(), sync_dist=True)
-        self.valid_mel_loss.reset()
+        pass
+        # self.net_g.eval()
+        # valid_mel_loss_epoch = self.valid_mel_loss.compute()
+        # self.log("valid/loss_mel_epoch", valid_mel_loss_epoch.item(), sync_dist=True)
+        # self.valid_mel_loss.reset()
 
     def configure_optimizers(self):
         self.optim_g = torch.optim.AdamW(
