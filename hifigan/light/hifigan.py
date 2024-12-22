@@ -191,7 +191,6 @@ class HifiGAN(pl.LightningModule):
 
         # remove else
         y_wav_hat = self.net_g(x_mel)
-        y_hat_lengths = torch.tensor([y_wav_hat.shape[2]], dtype=torch.long)
 
         y_mel = spec_to_mel_torch(
             y_spec, 
@@ -210,14 +209,6 @@ class HifiGAN(pl.LightningModule):
             self.hparams.data.mel_fmin,
             self.hparams.data.mel_fmax
         )
-        # image_dict = {
-        #     "gen/mel": utils.plot_spectrogram_to_numpy(y_mel_hat[0].cpu().numpy()),
-        #     "gt/mel": utils.plot_spectrogram_to_numpy(y_mel[0].cpu().numpy())
-        # }
-        # audio_dict = {
-        #     "gen/audio": y_wav_hat[0,:,:y_hat_lengths[0]].squeeze(0).float(),
-        #     "gt/audio": y_wav[0,:,:y_wav_lengths[0]].squeeze(0).float()
-        # }
 
         mel_mask = torch.unsqueeze(sequence_mask(x_mel_lengths.long(), y_mel.size(2)), 1).to(y_mel.dtype)
 
@@ -228,16 +219,6 @@ class HifiGAN(pl.LightningModule):
         self.valid_mel_loss.update(valid_mel_loss_step.item())
         self.log("valid/loss_mel_step", valid_mel_loss_step.item(), sync_dist=True)
 
-        # logging
-        # tensorboard = self.logger.experiment
-        # utils.summarize(
-        #     writer=tensorboard,
-        #     global_step=self.global_step,
-        #     # images=image_dict,
-        #     # audios=audio_dict,
-        #     audio_sampling_rate=self.hparams.data.sampling_rate,
-        # )
-    
     def on_validation_epoch_end(self) -> None:
         self.net_g.eval()
         valid_mel_loss_epoch = self.valid_mel_loss.compute()

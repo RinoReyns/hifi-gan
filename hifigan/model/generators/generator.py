@@ -1,5 +1,4 @@
 
-
 from functools import reduce
 import operator
 from typing import List, Union
@@ -93,12 +92,17 @@ class Generator(torch.nn.Module):
         super(Generator, self).__init__()
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
-        self.n_head = 4
+        #self.n_head = 4
 
         # self.transformer_pre_encoder_layer = nn.TransformerEncoderLayer(d_model=initial_channel, nhead=self.n_head, batch_first=True, activation="gelu")
         # self.transformer_pre_encoder = nn.TransformerEncoder(self.transformer_pre_encoder_layer, num_layers=2)
 
-        self.conv_pre = Conv1d(in_channels=initial_channel, out_channels=upsample_initial_channel, kernel_size=pre_kernel_size, stride=1, padding=(pre_kernel_size-1)//2)
+        self.conv_pre = Conv1d(in_channels=initial_channel,
+                               out_channels=upsample_initial_channel,
+                               kernel_size=pre_kernel_size,
+                               stride=1,
+                               padding=(pre_kernel_size-1)//2,
+                               bias=False)
 
         self.ups = nn.ModuleList()
         for i, (u, k, d) in enumerate(zip(upsample_rates, upsample_kernel_sizes, upsample_dilation_sizes)):
@@ -118,7 +122,6 @@ class Generator(torch.nn.Module):
                 self.resblocks.append(ResBlock(channels=ch, kernel_size=k, dilation=d))
 
         self.conv_post = Conv1d(ch, 1, post_kernel_size, 1, padding=(post_kernel_size-1)//2, bias=False)
-        # self.ups.apply(init_weights)
         self.conv_post.apply(init_weights)
 
     def forward(self, x):
