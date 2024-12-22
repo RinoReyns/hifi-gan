@@ -85,7 +85,7 @@ def main():
 
     # data
     train_dataset = MelDataset(hparams.data.training_files, hparams.data)
-    #valid_dataset = MelDataset(hparams.data.validation_files, hparams.data)
+    valid_dataset = MelDataset(hparams.data.validation_files, hparams.data)
 
     collate_fn = MelCollate()
 
@@ -94,15 +94,14 @@ def main():
     else:
         batch_per_gpu = hparams.train.batch_size
     train_loader = DataLoader(train_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=True, pin_memory=True, collate_fn=collate_fn)
-    #valid_loader = DataLoader(valid_dataset, batch_size=4, num_workers=4, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    valid_loader = DataLoader(valid_dataset, batch_size=4, num_workers=4, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     # model
     model = HifiGAN(**hparams)
     trainer = pl.Trainer(**trainer_params) # , profiler=profiler, max_steps=200
     # resume training
     ckpt_path = last_checkpoint(hparams.trainer.default_root_dir)
-    #trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path=ckpt_path)
-    trainer.fit(model=model, train_dataloaders=train_loader, ckpt_path=ckpt_path)
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":
   main()

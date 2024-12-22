@@ -72,15 +72,6 @@ class HifiGAN(pl.LightningModule):
         x_mel, ids_slice = rand_slice_segments(x_mel, x_mel_lengths, self.hparams.train.segment_size // self.hparams.data.hop_length)
         y_wav = slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
-        y_spec = spectrogram_torch_audio(
-            y_wav.squeeze(1).float(),
-            self.hparams.data.filter_length,
-            self.hparams.data.sampling_rate,
-            self.hparams.data.hop_length,
-            self.hparams.data.win_length,
-            False
-        )
-
         # generator forward
         y_hat = self.net_g(x_mel)
 
@@ -115,14 +106,13 @@ class HifiGAN(pl.LightningModule):
         scalar_dict.update({"train/d_s_r/{}".format(i): v for i, v in enumerate(losses_disc_s_r)})
         scalar_dict.update({"train/d_s_g/{}".format(i): v for i, v in enumerate(losses_disc_s_g)})
 
-        image_dict = {}
-        
+
         tensorboard = self.logger.experiment
 
         utils.summarize(
             writer=tensorboard,
             global_step=self.global_step, 
-            images=image_dict,
+            images={},
             scalars=scalar_dict)
         
         self.manual_backward(loss_disc_all)
@@ -169,11 +159,6 @@ class HifiGAN(pl.LightningModule):
         scalar_dict.update({"train/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
         scalar_dict.update({"train/g/s_gen_{}".format(i): v for i, v in enumerate(losses_s_gen)})
 
-        # image_dict = {
-        #     "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
-        #     "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_mel_hat[0].data.cpu().numpy()), 
-        #     "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy())
-        # }
         image_dict = {}
         
         tensorboard = self.logger.experiment
@@ -189,9 +174,6 @@ class HifiGAN(pl.LightningModule):
         # return loss_disc_all, loss_gen_all
 
     def validation_step(self, batch, batch_idx):
-        print("validation is skipped")
-        return
-
         self.net_g.eval()
         
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
@@ -206,7 +188,6 @@ class HifiGAN(pl.LightningModule):
             self.hparams.data.sampling_rate,
             self.hparams.data.hop_length,
             self.hparams.data.win_length, center=False)
-        y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
 
         # remove else
         y_wav_hat = self.net_g(x_mel)
@@ -229,14 +210,14 @@ class HifiGAN(pl.LightningModule):
             self.hparams.data.mel_fmin,
             self.hparams.data.mel_fmax
         )
-        image_dict = {
-            "gen/mel": utils.plot_spectrogram_to_numpy(y_mel_hat[0].cpu().numpy()),
-            "gt/mel": utils.plot_spectrogram_to_numpy(y_mel[0].cpu().numpy())
-        }
-        audio_dict = {
-            "gen/audio": y_wav_hat[0,:,:y_hat_lengths[0]].squeeze(0).float(),
-            "gt/audio": y_wav[0,:,:y_wav_lengths[0]].squeeze(0).float()
-        }
+        # image_dict = {
+        #     "gen/mel": utils.plot_spectrogram_to_numpy(y_mel_hat[0].cpu().numpy()),
+        #     "gt/mel": utils.plot_spectrogram_to_numpy(y_mel[0].cpu().numpy())
+        # }
+        # audio_dict = {
+        #     "gen/audio": y_wav_hat[0,:,:y_hat_lengths[0]].squeeze(0).float(),
+        #     "gt/audio": y_wav[0,:,:y_wav_lengths[0]].squeeze(0).float()
+        # }
 
         mel_mask = torch.unsqueeze(sequence_mask(x_mel_lengths.long(), y_mel.size(2)), 1).to(y_mel.dtype)
 
@@ -248,21 +229,20 @@ class HifiGAN(pl.LightningModule):
         self.log("valid/loss_mel_step", valid_mel_loss_step.item(), sync_dist=True)
 
         # logging
-        tensorboard = self.logger.experiment
-        utils.summarize(
-            writer=tensorboard,
-            global_step=self.global_step, 
-            images=image_dict,
-            audios=audio_dict,
-            audio_sampling_rate=self.hparams.data.sampling_rate,
-        )
+        # tensorboard = self.logger.experiment
+        # utils.summarize(
+        #     writer=tensorboard,
+        #     global_step=self.global_step,
+        #     # images=image_dict,
+        #     # audios=audio_dict,
+        #     audio_sampling_rate=self.hparams.data.sampling_rate,
+        # )
     
     def on_validation_epoch_end(self) -> None:
-        pass
-        # self.net_g.eval()
-        # valid_mel_loss_epoch = self.valid_mel_loss.compute()
-        # self.log("valid/loss_mel_epoch", valid_mel_loss_epoch.item(), sync_dist=True)
-        # self.valid_mel_loss.reset()
+        self.net_g.eval()
+        valid_mel_loss_epoch = self.valid_mel_loss.compute()
+        self.log("valid/loss_mel_epoch", valid_mel_loss_epoch.item(), sync_dist=True)
+        self.valid_mel_loss.reset()
 
     def configure_optimizers(self):
         self.optim_g = torch.optim.AdamW(
