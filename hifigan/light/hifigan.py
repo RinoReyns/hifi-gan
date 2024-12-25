@@ -1,28 +1,20 @@
-
 import itertools
 import logging
 from typing import Any, Dict
 import torch
-from torch import nn
 from torch.nn import functional as F
-from torch import optim
-import torchaudio
-import torchaudio.transforms as T
-
-import random
 
 import lightning.pytorch as pl
 import torchmetrics
 
 from ..model.discriminators.multi_scale_discriminator import MultiScaleDiscriminator
 from ..model.discriminators.multi_period_discriminator import MultiPeriodDiscriminator
-from ..model.discriminators.spectrogram_discriminator import SpectrogramDiscriminator
 from ..model.generators.generator import Generator
-from ..model.commons import slice_segments, rand_slice_segments, sequence_mask, clip_grad_value_
+from ..model.commons import slice_segments, rand_slice_segments, sequence_mask
 from ..model.pipeline import AudioPipeline
 
-from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch, spectrogram_torch, spectrogram_torch_audio
-from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
+from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch, spectrogram_torch_audio
+from .losses import discriminator_loss, feature_loss, generator_loss
 from .. import utils
 
 class HifiGAN(pl.LightningModule):
@@ -158,14 +150,11 @@ class HifiGAN(pl.LightningModule):
 
         scalar_dict.update({"train/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
         scalar_dict.update({"train/g/s_gen_{}".format(i): v for i, v in enumerate(losses_s_gen)})
-
-        image_dict = {}
         
         tensorboard = self.logger.experiment
         utils.summarize(
             writer=tensorboard,
-            global_step=self.global_step, 
-            images=image_dict,
+            global_step=self.global_step,
             scalars=scalar_dict)
 
         self.manual_backward(loss_gen_all)

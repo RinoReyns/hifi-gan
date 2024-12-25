@@ -4,11 +4,6 @@ import json
 import glob
 import argparse
 from typing import Optional
-import torch
-import torchaudio
-import tqdm
-from torch import nn, optim
-from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from hifigan.light.hifigan import HifiGAN
 
@@ -17,12 +12,10 @@ from hifigan.data.collate import MelCollate
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-from lightning.pytorch.profilers import SimpleProfiler, AdvancedProfiler
 import lightning_fabric
 
 from hifigan.hparams import HParams
-from hifigan.data.dataset import MelDataset, MelDataset
-from hifigan.utils import load_state_dict
+from hifigan.data.dataset import MelDataset
 
 def get_hparams(config_path: str) -> HParams:
     with open(config_path, "r") as f:
@@ -44,9 +37,9 @@ def last_checkpoint(path: str) -> Optional[str]:
     return ckpt_path
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="./configs/24k.json", help='JSON file for configuration')
-    parser.add_argument('-a', '--accelerator', type=str, default="gpu", help='training device')
-    parser.add_argument('-d', '--device', type=str, default="3", help='training device ids')
+    parser.add_argument('-c', '--config', type=str, default="./configs/48k.json", help='JSON file for configuration')
+    parser.add_argument('-a', '--accelerator', type=str, default="cpu", help='training device')
+    parser.add_argument('-d', '--device', type=str, default="1", help='training device ids')
     parser.add_argument('-n', '--num-nodes', type=int, default=1, help='training node number')
     args = parser.parse_args()
 
@@ -94,11 +87,12 @@ def main():
     else:
         batch_per_gpu = hparams.train.batch_size
     train_loader = DataLoader(train_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=True, pin_memory=True, collate_fn=collate_fn)
-    valid_loader = DataLoader(valid_dataset, batch_size=4, num_workers=4, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     # model
     model = HifiGAN(**hparams)
-    trainer = pl.Trainer(**trainer_params) # , profiler=profiler, max_steps=200
+    print(sum(p.numel() for p in model.net_g.parameters() if p.requires_grad))
+    trainer = pl.Trainer(**trainer_params)
     # resume training
     ckpt_path = last_checkpoint(hparams.trainer.default_root_dir)
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path=ckpt_path)
