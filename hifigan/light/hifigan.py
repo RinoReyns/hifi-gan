@@ -212,6 +212,7 @@ class HifiGAN(pl.LightningModule):
         self.net_g.eval()
         valid_mel_loss_epoch = self.valid_mel_loss.compute()
         self.log("valid/loss_mel_epoch", valid_mel_loss_epoch.item(), sync_dist=True)
+        print(f"valid/loss_mel_epoch: {valid_mel_loss_epoch.item()}")
         self.valid_mel_loss.reset()
 
     def configure_optimizers(self):

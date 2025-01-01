@@ -1,7 +1,4 @@
-
-from functools import reduce
-import operator
-from typing import List, Union
+from typing import List
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -55,7 +52,12 @@ class MultiHeadConvTranspose1dBlock(torch.nn.Module):
         self.convs = nn.ModuleList()
         self.num_head = len(dilation)
         for dilation_size in dilation:
-            conv_kernel = ConvTranspose1d(in_channels, out_channels, kernel_size, stride, dilation=dilation_size, padding=self.get_padding(kernel_size, dilation_size, stride))
+            conv_kernel = ConvTranspose1d(in_channels,
+                                          out_channels,
+                                          kernel_size,
+                                          stride,
+                                          dilation=dilation_size,
+                                          padding=self.get_padding(kernel_size, dilation_size, stride))
             self.convs.append(conv_kernel)
             conv_kernel.apply(init_weights)
         self.out_linear = nn.Linear(self.num_head * out_channels, out_channels, bias=True)
