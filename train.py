@@ -11,7 +11,6 @@ from hifigan.data.collate import MelCollate
 
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks import ModelCheckpoint
-from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import lightning_fabric
 
 from hifigan.hparams import HParams
@@ -35,6 +34,7 @@ def last_checkpoint(path: str) -> Optional[str]:
             if os.path.exists(last_ckpt):
                 ckpt_path = last_ckpt
     return ckpt_path
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="./configs/48k.json", help='JSON file for configuration')
@@ -49,8 +49,8 @@ def main():
     devices = [int(n.strip()) for n in args.device.split(",")]
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=None, save_last=True, every_n_train_steps=2000, save_weights_only=False,
-        monitor="valid/loss_mel_epoch", mode="min", save_top_k=5
+        dirpath=None, save_last=True, every_n_train_steps=0, save_weights_only=False,
+        monitor="valid/loss_mel_epoch", mode="min", save_top_k=1
     )
 
     trainer_params = {
