@@ -49,8 +49,8 @@ def main():
     devices = [int(n.strip()) for n in args.device.split(",")]
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=None, save_last=True, every_n_train_steps=3000, save_weights_only=False,
-        monitor="valid/loss_mel_epoch", mode="min", save_top_k=1
+        dirpath=None, save_last=True, every_n_train_steps=2000, save_weights_only=False,
+        monitor="valid/loss_mel_epoch", mode="min", save_top_k=5
     )
 
     trainer_params = {
