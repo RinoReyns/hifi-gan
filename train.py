@@ -85,8 +85,10 @@ def main():
         batch_per_gpu = hparams.train.batch_size // len(devices)
     else:
         batch_per_gpu = hparams.train.batch_size
-    train_loader = DataLoader(train_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=True, pin_memory=True, collate_fn=collate_fn)
-    valid_loader = DataLoader(valid_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=True, pin_memory=True,
+                              collate_fn=collate_fn)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_per_gpu, num_workers=8, shuffle=False, pin_memory=True,
+                              collate_fn=collate_fn)
 
     # model
     model = HifiGAN(**hparams)
