@@ -1,7 +1,6 @@
-
 import torch
 
-class MelCollate():
+class MelCollate:
     def __init__(self, return_ids: bool = False):
         self.return_ids = return_ids
 

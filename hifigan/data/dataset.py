@@ -5,8 +5,6 @@ from typing import Optional
 import torch
 import torchaudio
 
-from ..mel_processing import spec_to_mel_torch, spectrogram_torch
-
 from ..utils import load_filepaths, load_wav_to_torch
 
 resamplers = {}

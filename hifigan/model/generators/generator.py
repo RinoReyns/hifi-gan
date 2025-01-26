@@ -3,8 +3,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
-from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
+from torch.nn import Conv1d, ConvTranspose1d
+from torch.nn.utils import weight_norm, remove_weight_norm
 from ..commons import init_weights, get_padding
 
 LRELU_SLOPE = 0.1
@@ -14,13 +14,25 @@ class ResBlock(torch.nn.Module):
         super(ResBlock, self).__init__()
         self.convs1 = nn.ModuleList()
         for dilation_size in dilation:
-            conv_kernel = weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=dilation_size, padding=get_padding(kernel_size, dilation_size)))
+            conv_kernel = weight_norm(Conv1d(channels,
+                                             channels,
+                                             kernel_size,
+                                             1,
+                                             dilation=dilation_size,
+                                             padding=get_padding(kernel_size, dilation_size),
+                                             bias=False))
             self.convs1.append(conv_kernel)
         self.convs1.apply(init_weights)
 
         self.convs2 = nn.ModuleList()
-        for dilation_size in dilation:
-            conv_kernel = weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=1, padding=get_padding(kernel_size, 1)))
+        for _ in dilation:
+            conv_kernel = weight_norm(Conv1d(channels,
+                                             channels,
+                                             kernel_size,
+                                             1,
+                                             dilation=1,
+                                             padding=get_padding(kernel_size, 1),
+                                             bias=False))
             self.convs2.append(conv_kernel)
         self.convs2.apply(init_weights)
 
@@ -114,7 +126,8 @@ class Generator(torch.nn.Module):
                     kernel_size=k,
                     stride=u,
                     padding=(((k-1)*d+1)-u)//2,
-                    dilation=d)
+                    dilation=d,
+                    bias=False)
             )
 
         self.resblocks = nn.ModuleList()
@@ -123,7 +136,8 @@ class Generator(torch.nn.Module):
             for j, (k, d) in enumerate(zip(resblock_kernel_sizes, resblock_dilation_sizes)):
                 self.resblocks.append(ResBlock(channels=ch, kernel_size=k, dilation=d))
 
-        self.conv_post = Conv1d(ch, 1, post_kernel_size, 1, padding=(post_kernel_size-1)//2, bias=False)
+        self.conv_post = Conv1d(ch, 1, post_kernel_size, 1, padding=(post_kernel_size-1)//2,
+                                bias=False)
         self.conv_post.apply(init_weights)
 
     def forward(self, x):
@@ -145,4 +159,3 @@ class Generator(torch.nn.Module):
         x = torch.tanh(x)
 
         return x
-

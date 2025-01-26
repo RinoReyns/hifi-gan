@@ -214,9 +214,10 @@ class HifiGAN(pl.LightningModule):
             eps=self.hparams.train.eps)
         # TODO:
         # use cosine LR Scheduler
-        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g, gamma=self.hparams.train.lr_decay)
+        self.scheduler_g = torch.optim.lr_scheduler.CosineAnnealingLR(self.optim_g, T_max=self.hparams.train.max_epochs)
         self.scheduler_g.last_epoch = self.current_epoch - 1
-        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hparams.train.lr_decay)
+        #self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hparams.train.lr_decay)
+        self.scheduler_d = torch.optim.lr_scheduler.CosineAnnealingLR(self.optim_d, T_max=self.hparams.train.max_epochs)
         self.scheduler_d.last_epoch = self.current_epoch - 1
 
         return [self.optim_d, self.optim_g], [self.scheduler_d, self.scheduler_g]
